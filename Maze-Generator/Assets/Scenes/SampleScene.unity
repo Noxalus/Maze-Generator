@@ -333,12 +333,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce1d2fb0bb1526a4abb1db02eb7cb1a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _width: 10
-  _height: 10
-  _cellSize: 1
-  _wallPrefab: {fileID: 8813486590213351687, guid: 596b7b26c691a1249b9b372ee5c750ec,
-    type: 3}
-  _mazeHolder: {fileID: 248208506}
 --- !u!4 &1289442333
 Transform:
   m_ObjectHideFlags: 0
