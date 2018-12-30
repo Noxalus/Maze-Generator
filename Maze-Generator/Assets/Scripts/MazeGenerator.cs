@@ -3,25 +3,6 @@ using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
 {
-    private enum CellType
-    {
-        Empty = 0,
-        Wall = 1,
-        Start = 2,
-        Exit = 3,
-    }
-
-    [SerializeField] int _width = 1;
-    [SerializeField] int _height = 1;
-    [SerializeField] int _cellSize = 1;
-
-    [SerializeField] GameObject _wallPrefab = null;
-    [SerializeField] GameObject _exitPrefab = null;
-    [SerializeField] Transform _mazeHolder = null;
-
-    private CellType[,] _maze;
-    private GameObject[,] _mazeMeshes;
-
 #if UNITY_EDITOR
     private void OnValidate()
     {
@@ -34,10 +15,37 @@ public class MazeGenerator : MonoBehaviour
     }
 #endif
 
-    void Start()
+    private enum CellType
     {
-        GenerateMaze();
+        Empty = 0,
+        Wall = 1,
+        Start = 2,
+        Exit = 3,
     }
+
+    #region Serialized fields
+
+    [SerializeField] int _width = 1;
+    [SerializeField] int _height = 1;
+    [SerializeField] int _cellSize = 1;
+
+    [SerializeField] GameObject _emptyPrefab = null;
+    [SerializeField] GameObject _wallPrefab = null;
+    [SerializeField] GameObject _exitPrefab = null;
+    [SerializeField] Transform _mazeHolder = null;
+
+    #endregion
+
+    private CellType[,] _maze;
+    private GameObject[,] _mazeMeshes;
+
+    #region Properties
+
+    public int Width => _width;
+    public int Height => _height;
+    public int CellSize => _cellSize;
+
+    #endregion
 
     private void ClearMaze()
     {
@@ -58,9 +66,6 @@ public class MazeGenerator : MonoBehaviour
 
     public void GenerateMaze()
     {
-        // Clear current maze
-        ClearMaze();
-
         _maze = new CellType[_width, _height];
 
         // Fill the maze with walls
@@ -192,19 +197,29 @@ public class MazeGenerator : MonoBehaviour
 
     private void CreateMazeMeshes()
     {
+        // Clear current maze
+        ClearMaze();
+
         _mazeMeshes = new GameObject[_width, _height];
+
+        // Compute bottom left position to center the maze on the world origin
+        var bottomLeftPosition = new Vector3(
+            (-(_width * _cellSize) / 2f) + (_cellSize / 2f),
+            0f,
+            (-(_height * _cellSize) / 2f) + (_cellSize / 2f)
+        );
 
         for (int y = 0; y < _height; y++)
         {
             for (int x = 0; x < _width; x++)
             {
-                var position = new Vector3(_cellSize * x, 0f, _cellSize * y);
+                var position = bottomLeftPosition + new Vector3(_cellSize * x, 0f, _cellSize * y);
                 var prefab = _wallPrefab;
 
                 switch (_maze[x, y])
                 {
                     case CellType.Empty:
-                        prefab = null;
+                        prefab = _emptyPrefab;
                         break;
                     case CellType.Exit:
                         prefab = _exitPrefab;
