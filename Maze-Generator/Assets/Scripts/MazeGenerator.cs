@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
 {
@@ -10,13 +11,13 @@ public class MazeGenerator : MonoBehaviour
         Exit = 3,
     }
 
-    [SerializeField] int _width;
-    [SerializeField] int _height;
-    [SerializeField] int _cellSize;
+    [SerializeField] int _width = 1;
+    [SerializeField] int _height = 1;
+    [SerializeField] int _cellSize = 1;
 
-    [SerializeField] GameObject _wallPrefab;
-    [SerializeField] GameObject _exitPrefab;
-    [SerializeField] Transform _mazeHolder;
+    [SerializeField] GameObject _wallPrefab = null;
+    [SerializeField] GameObject _exitPrefab = null;
+    [SerializeField] Transform _mazeHolder = null;
 
     private CellType[,] _maze;
     private GameObject[,] _mazeMeshes;
@@ -61,7 +62,6 @@ public class MazeGenerator : MonoBehaviour
         ClearMaze();
 
         _maze = new CellType[_width, _height];
-        _mazeMeshes = new GameObject[_width, _height];
 
         // Fill the maze with walls
         for (int y = 0; y < _height; y++)
@@ -73,10 +73,99 @@ public class MazeGenerator : MonoBehaviour
         }
 
         var exitPosition = GenerateExitPosition();
-        Debug.Log("Exit position: " + exitPosition);
         _maze[exitPosition.x, exitPosition.y] = CellType.Exit;
 
-        Create3DStructure();
+        GeneratePerfectMaze(exitPosition);
+
+        CreateMazeMeshes();
+    }
+
+    private void GeneratePerfectMaze(Point initialPosition)
+    {
+        var currentPosition = initialPosition;
+        var possibleCells = new List<Point>();
+        var previousPositions = new Stack<Point>();
+
+        previousPositions.Push(initialPosition);
+
+        do
+        {
+            possibleCells.Clear();
+
+            Point previousPosition = previousPositions.Peek();
+
+            possibleCells = FindPossibleCells(currentPosition, initialPosition);
+
+            if (possibleCells.Count > 0)
+            {
+                currentPosition = possibleCells[Random.Range(0, possibleCells.Count)];
+                _maze[currentPosition.x, currentPosition.y] = CellType.Empty;
+                previousPositions.Push(currentPosition);
+            }
+            else
+            {
+                currentPosition = previousPositions.Pop();
+            }
+        } while (currentPosition != initialPosition);
+    }
+
+    private List<Point> GetNeighbors(Point position)
+    {
+        var neighbors = new List<Point>();
+
+        var upPosition = new Point(position.x, position.y + 1);
+        var rightPosition = new Point(position.x + 1, position.y);
+        var downPosition = new Point(position.x, position.y - 1);
+        var leftPosition = new Point(position.x - 1, position.y);
+
+        if (upPosition.y < _height)
+            neighbors.Add(upPosition);
+        if (rightPosition.x < _width)
+            neighbors.Add(rightPosition);
+        if (downPosition.y >= 0)
+            neighbors.Add(downPosition);
+        if (leftPosition.x >= 0)
+            neighbors.Add(leftPosition);
+
+        return neighbors;
+    }
+
+    private List<Point> FindPossibleCells(Point position, Point previousPosition)
+    {
+        var possibleCells = new List<Point>();
+
+        var neighbors = GetNeighbors(position);
+        neighbors.RemoveAll(p => p == previousPosition);
+
+        foreach (var neighbor in neighbors)
+        {
+            var neighborPosition = new Point(neighbor.x, neighbor.y);
+            if (_maze[neighbor.x, neighbor.y] == CellType.Wall && IsPossibleCell(neighborPosition, position))
+            {
+                possibleCells.Add(neighborPosition);
+            }
+        }
+
+        return possibleCells;
+    }
+
+    private bool IsPossibleCell(Point position, Point excludedPosition)
+    {
+        var wallNumber = 0;
+
+        var neighbors = GetNeighbors(position);
+        neighbors.RemoveAll(p => p == excludedPosition);
+
+        foreach (var neighbor in neighbors)
+        {
+            var neighborPosition = new Point(neighbor.x, neighbor.y);
+            if (_maze[neighbor.x, neighbor.y] == CellType.Wall)
+            {
+                wallNumber++;
+            }
+        }
+
+        return (wallNumber == 3);
     }
 
     private Point GenerateExitPosition()
@@ -101,8 +190,10 @@ public class MazeGenerator : MonoBehaviour
         return exitPosition;
     }
 
-    private void Create3DStructure()
+    private void CreateMazeMeshes()
     {
+        _mazeMeshes = new GameObject[_width, _height];
+
         for (int y = 0; y < _height; y++)
         {
             for (int x = 0; x < _width; x++)
@@ -112,12 +203,16 @@ public class MazeGenerator : MonoBehaviour
 
                 switch (_maze[x, y])
                 {
+                    case CellType.Empty:
+                        prefab = null;
+                        break;
                     case CellType.Exit:
                         prefab = _exitPrefab;
                         break;
                 }
 
-                _mazeMeshes[x, y] = Instantiate(prefab, position, Quaternion.identity, _mazeHolder);
+                if (prefab)
+                    _mazeMeshes[x, y] = Instantiate(prefab, position, Quaternion.identity, _mazeHolder);
             }
         }
     }
