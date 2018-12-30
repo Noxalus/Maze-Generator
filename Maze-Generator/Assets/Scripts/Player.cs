@@ -9,6 +9,8 @@ public class Player : MonoBehaviour
         var initialPosition = new Vector3(position.x, 0f, position.y);
         initialPosition.y = 2f;
 
+        _rigidbody.Sleep();
         _rigidbody.MovePosition(initialPosition);
+        _rigidbody.WakeUp();
     }
 }

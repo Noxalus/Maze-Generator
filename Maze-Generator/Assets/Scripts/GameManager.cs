@@ -25,9 +25,12 @@ public class GameManager : MonoBehaviour
         newCameraPosition.z = mazeOrigin.y;
         _mainCamera.transform.localPosition = newCameraPosition;
 
+        _boardController.Initialize();
         _boardController.SetOrigin(mazeOrigin);
 
         _player.Initialize(_mazeGenerator.GeneratePlayerPosition());
+
+        DeviceRotation.UpdateReferenceOrientation();
     }
 
     public void OnGenerateMazeButtonClicked()
