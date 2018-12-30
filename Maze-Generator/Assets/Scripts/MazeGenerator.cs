@@ -47,6 +47,15 @@ public class MazeGenerator : MonoBehaviour
 
     #endregion
 
+    public Vector2 GetOrigin()
+    {
+        var mazeOrigin = Vector2.zero;
+        mazeOrigin.x = ((Width * CellSize) / 2f) - (CellSize / 2f);
+        mazeOrigin.y = ((Height * CellSize) / 2f) - (CellSize / 2f);
+
+        return mazeOrigin;
+    }
+
     private void ClearMaze()
     {
         if (_mazeMeshes == null)
@@ -170,12 +179,12 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
-        return (wallNumber == 3);
+        return wallNumber == 3;
     }
 
     private Point GenerateExitPosition()
     {
-        var exitPosition = new Point(Random.Range(0, _width), Random.Range(0, _height));
+        var exitPosition = new Point(Random.Range(0, _width - 1), Random.Range(0, _height - 1));
 
         if (exitPosition.x > _width / 2f)
         {
@@ -195,6 +204,32 @@ public class MazeGenerator : MonoBehaviour
         return exitPosition;
     }
 
+    public Vector2 GeneratePlayerPosition()
+    {
+        var emptyCells = new List<Point>();
+        var playerPosition = Vector2.zero;
+
+        for (int y = 0; y < _height; y++)
+        {
+            for (int x = 0; x < _width; x++)
+            {
+                if (_maze[x, y] == CellType.Empty)
+                {
+                    emptyCells.Add(new Point(x, y));
+                }
+            }
+        }
+
+        if (emptyCells.Count > 0)
+        {
+            var randomCell = emptyCells[Random.Range(0, emptyCells.Count)];
+            playerPosition.x = randomCell.x * CellSize;
+            playerPosition.y = randomCell.y * CellSize;
+        }
+
+        return playerPosition;
+    }
+
     private void CreateMazeMeshes()
     {
         // Clear current maze
@@ -202,18 +237,11 @@ public class MazeGenerator : MonoBehaviour
 
         _mazeMeshes = new GameObject[_width, _height];
 
-        // Compute bottom left position to center the maze on the world origin
-        var bottomLeftPosition = new Vector3(
-            (-(_width * _cellSize) / 2f) + (_cellSize / 2f),
-            0f,
-            (-(_height * _cellSize) / 2f) + (_cellSize / 2f)
-        );
-
         for (int y = 0; y < _height; y++)
         {
             for (int x = 0; x < _width; x++)
             {
-                var position = bottomLeftPosition + new Vector3(_cellSize * x, 0f, _cellSize * y);
+                var position = new Vector3(_cellSize * x, 0f, _cellSize * y);
                 var prefab = _wallPrefab;
 
                 switch (_maze[x, y])
