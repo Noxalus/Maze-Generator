@@ -19,6 +19,7 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] Transform _mazeHolder;
 
     private CellType[,] _maze;
+    private GameObject[,] _mazeMeshes;
 
 #if UNITY_EDITOR
     private void OnValidate()
@@ -37,9 +38,30 @@ public class MazeGenerator : MonoBehaviour
         GenerateMaze();
     }
 
-    private void GenerateMaze()
+    private void ClearMaze()
     {
+        if (_mazeMeshes == null)
+            return;
+
+        for (int y = 0; y < _height; y++)
+        {
+            for (int x = 0; x < _width; x++)
+            {
+                if (_mazeMeshes[x, y] != null)
+                {
+                    Destroy(_mazeMeshes[x, y]);
+                }
+            }
+        }
+    }
+
+    public void GenerateMaze()
+    {
+        // Clear current maze
+        ClearMaze();
+
         _maze = new CellType[_width, _height];
+        _mazeMeshes = new GameObject[_width, _height];
 
         // Fill the maze with walls
         for (int y = 0; y < _height; y++)
@@ -81,8 +103,6 @@ public class MazeGenerator : MonoBehaviour
 
     private void Create3DStructure()
     {
-
-
         for (int y = 0; y < _height; y++)
         {
             for (int x = 0; x < _width; x++)
@@ -97,7 +117,7 @@ public class MazeGenerator : MonoBehaviour
                         break;
                 }
 
-                Instantiate(prefab, position, Quaternion.identity, _mazeHolder);
+                _mazeMeshes[x, y] = Instantiate(prefab, position, Quaternion.identity, _mazeHolder);
             }
         }
     }
